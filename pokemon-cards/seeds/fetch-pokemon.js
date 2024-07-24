@@ -10,18 +10,49 @@ const getRandomItems = (items, count) => {
 
 const fetchPokemonDetails = async (pokemon) => {
   try {
+    const pokemonDetails = await axios.get(
+      `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
+    );
+
     const detailsResponse = await axios.get(pokemon.url);
 
     const descriptionEntry = detailsResponse.data.flavor_text_entries.find(
       (entry) => entry.language.name === "en"
     );
 
+    const move1 = await axios.get(
+      `https://pokeapi.co/api/v2/move/${pokemonDetails.data.moves[0].move.name}`
+    );
+    const move2 = await axios.get(
+      `https://pokeapi.co/api/v2/move/${pokemonDetails.data.moves[1].move.name}`
+    );
+    const move3 = await axios.get(
+      `https://pokeapi.co/api/v2/move/${pokemonDetails.data.moves[2].move.name}`
+    );
+
+    const movesDataArray = [move1.data, move2.data, move3.data];
+
+    const movesArray = movesDataArray.map((x) => ({
+      name: x.name,
+      description: x.flavor_text_entries.find(
+        (entry) => entry.language.name === "en"
+      ).flavor_text,
+      power: x.power,
+    }));
+
+    const types = pokemonDetails.data.types.map((x) => x.type.name);
+
+    const shiny = Math.floor(Math.random() * 11);
     return {
       name: pokemon.name,
       description: descriptionEntry
         ? descriptionEntry.flavor_text
         : "No description available",
-      spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${detailsResponse.data.id}.png`,
+      spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${
+        shiny === 1 ? "shiny/" : ""
+      }${detailsResponse.data.id}.png`,
+      moves: movesArray,
+      types: types,
     };
   } catch (error) {
     console.error(`Error fetching details for ${pokemon.name}:`, error.message);
